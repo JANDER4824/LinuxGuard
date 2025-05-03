@@ -34,7 +34,7 @@ LinuxGuard es una herramienta de gestión de firewall para sistemas Linux que pr
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/[tu-usuario]/LinuxGuard.git
+git clone https://github.com/[JANDER4824]/LinuxGuard.git
 cd LinuxGuard
 
 # Hacer el script ejecutable
