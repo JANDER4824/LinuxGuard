@@ -111,7 +111,7 @@ Este proyecto está licenciado bajo la Licencia MIT - vea el archivo [LICENSE](L
 
 ## 👤 Autor
 
-[Tu nombre o usuario]
+[JANDER]
 
 ---
 
