@@ -140,7 +140,7 @@ def block_ip():
         return
     
     command = f"iptables -A INPUT -s {ip} -j DROP"
-    if execute_command(command):
+    if execute_command(command) is not None:
         print(f"{Colors.GREEN}IP {ip} bloqueada exitosamente.{Colors.ENDC}")
         log_action(f"Bloqueada IP: {ip}")
     
@@ -166,13 +166,16 @@ def block_port():
     if protocol == 'both':
         cmd_tcp = f"iptables -A INPUT -p tcp --dport {port} -j DROP"
         cmd_udp = f"iptables -A INPUT -p udp --dport {port} -j DROP"
-        
-        if execute_command(cmd_tcp) and execute_command(cmd_udp):
+
+        success_tcp = execute_command(cmd_tcp) is not None
+        success_udp = execute_command(cmd_udp) is not None
+
+        if success_tcp and success_udp:
             print(f"{Colors.GREEN}Puerto {port} (TCP y UDP) bloqueado exitosamente.{Colors.ENDC}")
             log_action(f"Bloqueado puerto {port} (TCP y UDP)")
     else:
         cmd = f"iptables -A INPUT -p {protocol} --dport {port} -j DROP"
-        if execute_command(cmd):
+        if execute_command(cmd) is not None:
             print(f"{Colors.GREEN}Puerto {port}/{protocol} bloqueado exitosamente.{Colors.ENDC}")
             log_action(f"Bloqueado puerto {port}/{protocol}")
     
@@ -198,13 +201,16 @@ def allow_port():
     if protocol == 'both':
         cmd_tcp = f"iptables -A INPUT -p tcp --dport {port} -j ACCEPT"
         cmd_udp = f"iptables -A INPUT -p udp --dport {port} -j ACCEPT"
-        
-        if execute_command(cmd_tcp) and execute_command(cmd_udp):
+
+        success_tcp = execute_command(cmd_tcp) is not None
+        success_udp = execute_command(cmd_udp) is not None
+
+        if success_tcp and success_udp:
             print(f"{Colors.GREEN}Puerto {port} (TCP y UDP) permitido exitosamente.{Colors.ENDC}")
             log_action(f"Permitido puerto {port} (TCP y UDP)")
     else:
         cmd = f"iptables -A INPUT -p {protocol} --dport {port} -j ACCEPT"
-        if execute_command(cmd):
+        if execute_command(cmd) is not None:
             print(f"{Colors.GREEN}Puerto {port}/{protocol} permitido exitosamente.{Colors.ENDC}")
             log_action(f"Permitido puerto {port}/{protocol}")
     
@@ -236,7 +242,7 @@ def reset_firewall():
     
     success = True
     for cmd in commands:
-        if not execute_command(cmd):
+        if execute_command(cmd) is None:
             success = False
             break
     
@@ -323,7 +329,7 @@ def secure_mode():
     
     success = True
     for cmd in commands:
-        if not execute_command(cmd):
+        if execute_command(cmd) is None:
             success = False
             break
     
@@ -373,7 +379,7 @@ def allow_trusted_ip():
     if selected['port'] is None:
         # Permitir todo el tráfico desde esta IP
         cmd = f"iptables -A INPUT -s {ip} -j ACCEPT"
-        if execute_command(cmd):
+        if execute_command(cmd) is not None:
             print(f"{Colors.GREEN}Se ha permitido todo el tráfico desde {ip}{Colors.ENDC}")
             log_action(f"Permitido todo el tráfico desde IP: {ip}")
     else:
@@ -381,13 +387,16 @@ def allow_trusted_ip():
         if selected['protocol'] == 'both':
             cmd_tcp = f"iptables -A INPUT -s {ip} -p tcp --dport {selected['port']} -j ACCEPT"
             cmd_udp = f"iptables -A INPUT -s {ip} -p udp --dport {selected['port']} -j ACCEPT"
-            
-            if execute_command(cmd_tcp) and execute_command(cmd_udp):
+
+            success_tcp = execute_command(cmd_tcp) is not None
+            success_udp = execute_command(cmd_udp) is not None
+
+            if success_tcp and success_udp:
                 print(f"{Colors.GREEN}Se ha permitido {selected['name']} (puerto {selected['port']}) desde {ip}{Colors.ENDC}")
                 log_action(f"Permitido {selected['name']} desde IP: {ip}")
         else:
             cmd = f"iptables -A INPUT -s {ip} -p {selected['protocol']} --dport {selected['port']} -j ACCEPT"
-            if execute_command(cmd):
+            if execute_command(cmd) is not None:
                 print(f"{Colors.GREEN}Se ha permitido {selected['name']} (puerto {selected['port']}) desde {ip}{Colors.ENDC}")
                 log_action(f"Permitido {selected['name']} desde IP: {ip}")
     
