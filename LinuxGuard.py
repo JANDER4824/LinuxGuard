@@ -13,8 +13,9 @@ import re
 import sys
 import time
 import signal
-import socket
 import subprocess
+import shutil
+import shlex
 from datetime import datetime
 
 # Configuración global
@@ -45,17 +46,31 @@ def check_root():
         print(f"Por favor, ejecute: {Colors.BOLD}sudo python3 {sys.argv[0]}{Colors.ENDC}")
         sys.exit(1)
 
+def check_dependencies():
+    """Verifica que las dependencias necesarias estén instaladas"""
+    if shutil.which("iptables") is None:
+        print(f"{Colors.FAIL}Error: iptables no está instalado o no se encuentra en la ruta.{Colors.ENDC}")
+        log_action("ERROR: iptables no disponible")
+        sys.exit(1)
+
 def execute_command(command):
     """Ejecuta un comando del sistema y devuelve su salida"""
     try:
-        result = subprocess.run(command, shell=True, check=True, 
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        result = subprocess.run(
+            shlex.split(command),
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         return result.stdout
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"{Colors.FAIL}Error al ejecutar el comando: {e}{Colors.ENDC}")
-        print(f"Detalles: {e.stderr}")
-        log_action(f"ERROR: {command} - {e.stderr}")
+        if isinstance(e, subprocess.CalledProcessError):
+            print(f"Detalles: {e.stderr}")
+            log_action(f"ERROR: {command} - {e.stderr}")
+        else:
+            log_action(f"ERROR: comando no encontrado - {command}")
         return None
 
 def validate_ip(ip):
@@ -293,18 +308,22 @@ def save_configuration():
     input("\nPresione Enter para continuar...")
 
 def secure_mode():
-    """Activa el modo seguro: bloquea todo excepto HTTP y HTTPS"""
+    """Activa el modo seguro: bloquea todo excepto HTTP/HTTPS y opcionalmente SSH"""
     print(f"\n{Colors.BLUE}=== Activar modo seguro ==={Colors.ENDC}")
     print("El modo seguro bloqueará todo el tráfico entrante excepto:")
     print("  - HTTP (puerto 80)")
     print("  - HTTPS (puerto 443)")
     print("  - Conexiones establecidas y relacionadas")
     
-    confirm = input(f"\n{Colors.WARNING}ADVERTENCIA: Si está conectado por SSH, puede perder el acceso.{Colors.ENDC}\n¿Desea continuar? (s/n): ").lower()
+    confirm = input(
+        f"\n{Colors.WARNING}ADVERTENCIA: Si está conectado por SSH, puede perder el acceso.{Colors.ENDC}\n¿Desea continuar? (s/n): "
+    ).lower()
     if confirm != 's':
         print("Operación cancelada.")
         return
-    
+
+    allow_ssh = input("¿Desea permitir SSH (puerto 22)? (s/n): ").lower() == 's'
+
     # Lista de comandos para configurar el modo seguro
     commands = [
         "iptables -F",  # Limpia reglas existentes
@@ -312,20 +331,23 @@ def secure_mode():
         "iptables -P INPUT DROP",  # Política predeterminada: DROP para entrada
         "iptables -P FORWARD DROP",  # Política predeterminada: DROP para reenvío
         "iptables -P OUTPUT ACCEPT",  # Política predeterminada: ACCEPT para salida
-        
+
         # Permitir conexiones establecidas y relacionadas
         "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
-        
+
         # Permitir interfaz de loopback
         "iptables -A INPUT -i lo -j ACCEPT",
-        
+
         # Permitir HTTP y HTTPS
         "iptables -A INPUT -p tcp --dport 80 -j ACCEPT",
         "iptables -A INPUT -p tcp --dport 443 -j ACCEPT",
-        
+
         # Registrar paquetes descartados para análisis
-        "iptables -A INPUT -j LOG --log-prefix 'IPTables-Dropped: ' --log-level 4"
+        "iptables -A INPUT -j LOG --log-prefix 'IPTables-Dropped: ' --log-level 4",
     ]
+
+    if allow_ssh:
+        commands.insert(7, "iptables -A INPUT -p tcp --dport 22 -j ACCEPT")
     
     success = True
     for cmd in commands:
@@ -335,7 +357,10 @@ def secure_mode():
     
     if success:
         print(f"{Colors.GREEN}Modo seguro activado exitosamente.{Colors.ENDC}")
-        print("Sólo se permite tráfico HTTP (80) y HTTPS (443).")
+        allowed = "HTTP (80) y HTTPS (443)"
+        if allow_ssh:
+            allowed += " y SSH (22)"
+        print(f"Sólo se permite tráfico {allowed}.")
         log_action("Modo seguro activado")
     else:
         print(f"{Colors.FAIL}Error al activar el modo seguro.{Colors.ENDC}")
@@ -402,6 +427,43 @@ def allow_trusted_ip():
     
     input("\nPresione Enter para continuar...")
 
+def basic_firewall():
+    """Configura reglas básicas de firewall"""
+    print(f"\n{Colors.BLUE}=== Activar firewall básico ==={Colors.ENDC}")
+    confirm = input("Esto reemplazará las reglas actuales. ¿Desea continuar? (s/n): ").lower()
+    if confirm != 's':
+        print("Operación cancelada.")
+        return
+
+    commands = [
+        "iptables -F",
+        "iptables -X",
+        "iptables -P INPUT DROP",
+        "iptables -P FORWARD DROP",
+        "iptables -P OUTPUT ACCEPT",
+        "iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
+        "iptables -A INPUT -i lo -j ACCEPT",
+        "iptables -A INPUT -p icmp -j ACCEPT",
+        "iptables -A INPUT -p tcp --dport 22 -j ACCEPT",
+        "iptables -A INPUT -p tcp --dport 80 -j ACCEPT",
+        "iptables -A INPUT -p tcp --dport 443 -j ACCEPT",
+        "iptables -A INPUT -j LOG --log-prefix 'IPTables-Basic: ' --log-level 4",
+    ]
+
+    success = True
+    for cmd in commands:
+        if not execute_command(cmd):
+            success = False
+            break
+
+    if success:
+        print(f"{Colors.GREEN}Firewall básico activado.{Colors.ENDC}")
+        log_action("Firewall básico activado")
+    else:
+        print(f"{Colors.FAIL}Error al aplicar el firewall básico.{Colors.ENDC}")
+
+    input("\nPresione Enter para continuar...")
+
 def handle_sigint(sig, frame):
     """Maneja la interrupción CTRL+C limpiamente"""
     print("\n\nSaliendo del programa...")
@@ -416,9 +478,10 @@ def show_menu():
         '3': {'text': 'Bloquear puerto', 'function': block_port},
         '4': {'text': 'Permitir puerto', 'function': allow_port},
         '5': {'text': 'Permitir IP confiable', 'function': allow_trusted_ip},
-        '6': {'text': 'Activar modo seguro (solo HTTP/HTTPS)', 'function': secure_mode},
+        '6': {'text': 'Activar modo seguro (HTTP/HTTPS/SSH)', 'function': secure_mode},
         '7': {'text': 'Restablecer firewall (eliminar todas las reglas)', 'function': reset_firewall},
         '8': {'text': 'Guardar configuración', 'function': save_configuration},
+        '9': {'text': 'Activar firewall básico', 'function': basic_firewall},
         '0': {'text': 'Salir', 'function': None}
     }
     
@@ -447,8 +510,9 @@ def main():
     signal.signal(signal.SIGINT, handle_sigint)
     
     try:
-        # Verificar privilegios de root
+        # Verificar privilegios de root y dependencias
         check_root()
+        check_dependencies()
         
         # Inicializar archivo de log si no existe
         if not os.path.exists(LOG_FILE):

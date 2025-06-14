@@ -17,6 +17,7 @@ LinuxGuard es una herramienta de gestión de firewall para sistemas Linux que pr
 - 🚫 Bloqueo de puertos TCP/UDP
 - ✅ Permitir acceso a IPs confiables para servicios específicos
 - 🔥 Modo seguro preconfigurado (HTTP/HTTPS/SSH)
+- ⚡ Configuración rápida de firewall básico
 - 💾 Guardado y restauración de configuraciones
 - 📊 Registro detallado de todas las acciones
 - 🔄 Verificación de requisitos del sistema y módulos del kernel
