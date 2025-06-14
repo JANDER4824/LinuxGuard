@@ -16,7 +16,7 @@ LinuxGuard es una herramienta de gestión de firewall para sistemas Linux que pr
 - 🛡️ Bloqueo de IPs y rangos de red específicos
 - 🚫 Bloqueo de puertos TCP/UDP
 - ✅ Permitir acceso a IPs confiables para servicios específicos
-- 🔥 Modo seguro preconfigurado (HTTP/HTTPS/SSH)
+- 🔥 Modo seguro preconfigurado (HTTP/HTTPS)
 - 💾 Guardado y restauración de configuraciones
 - 📊 Registro detallado de todas las acciones
 - 🔄 Verificación de requisitos del sistema y módulos del kernel
@@ -38,13 +38,13 @@ git clone https://github.com/[JANDER4824]/LinuxGuard.git
 cd LinuxGuard
 
 # Hacer el script ejecutable
-chmod +x linuxguard.py
+chmod +x LinuxGuard.py
 ```
 
 ## 🚀 Uso
 
 ```bash
-sudo ./linuxguard.py
+sudo ./LinuxGuard.py
 ```
 
 Al iniciar el programa, se mostrará un menú interactivo con las siguientes opciones:
@@ -54,20 +54,18 @@ Al iniciar el programa, se mostrará un menú interactivo con las siguientes opc
 3. Bloquear puerto
 4. Permitir puerto
 5. Permitir IP confiable
-6. Activar modo seguro (HTTP/HTTPS/SSH)
+6. Activar modo seguro (solo HTTP/HTTPS)
 7. Restablecer firewall (eliminar todas las reglas)
 8. Guardar configuración
-9. Activar firewall básico
 0. Salir
 
 ## 🔑 Funcionalidades principales
 
 ### Modo seguro
 
-El modo seguro configura rápidamente un conjunto de reglas restrictivas que:
+- El modo seguro configura rápidamente un conjunto de reglas restrictivas que:
 - Permite HTTP (80) y HTTPS (443)
-- Opcionalmente mantiene SSH (22) para administración remota
-- Bloquea todo el resto del tráfico entrante
+- Bloquea todo el resto del tráfico entrante, incluido SSH
 - Protege contra ataques comunes de red
 - Permite las conexiones ya establecidas
 
@@ -92,7 +90,7 @@ El programa mantiene un registro detallado de todas las acciones realizadas en `
 ## ⚠️ Advertencias
 
 - **IMPORTANTE**: Este programa requiere privilegios de root para funcionar correctamente.
-- Si está conectado remotamente a través de SSH, tenga cuidado al restablecer las reglas o activar el modo seguro sin permitir SSH.
+- Si está conectado remotamente a través de SSH, tenga cuidado al restablecer las reglas o al activar el modo seguro, ya que este bloqueará el acceso SSH.
 - Se recomienda guardar la configuración antes de realizar cambios importantes.
 
 ## 🛠️ Desarrollo
