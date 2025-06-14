@@ -15,6 +15,7 @@ import time
 import signal
 import socket
 import subprocess
+import shlex
 from datetime import datetime
 
 # Configuración global
@@ -46,16 +47,26 @@ def check_root():
         sys.exit(1)
 
 def execute_command(command):
-    """Ejecuta un comando del sistema y devuelve su salida"""
+    """Ejecuta un comando del sistema de forma segura y devuelve su salida"""
     try:
-        result = subprocess.run(command, shell=True, check=True, 
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        # Permitir comandos como cadena o lista
+        if isinstance(command, str):
+            args = shlex.split(command)
+        else:
+            args = command
+        result = subprocess.run(args, check=True,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               universal_newlines=True)
         return result.stdout
+    except FileNotFoundError:
+        print(f"{Colors.FAIL}Comando no encontrado: {args[0]}{Colors.ENDC}")
+        log_action(f"ERROR: comando no encontrado: {args[0]}")
+        return None
     except subprocess.CalledProcessError as e:
         print(f"{Colors.FAIL}Error al ejecutar el comando: {e}{Colors.ENDC}")
         print(f"Detalles: {e.stderr}")
-        log_action(f"ERROR: {command} - {e.stderr}")
+        log_action(f"ERROR: {' '.join(args)} - {e.stderr}")
         return None
 
 def validate_ip(ip):
@@ -124,6 +135,21 @@ def show_rules():
         print(f"{Colors.WARNING}No se pudieron obtener las reglas actuales.{Colors.ENDC}")
     
     log_action("Visualización de reglas actuales")
+    input("\nPresione Enter para continuar...")
+
+def view_log():
+    """Muestra las últimas entradas del archivo de registro"""
+    print(f"\n{Colors.BLUE}=== Ver registro ==={Colors.ENDC}")
+    if not os.path.exists(LOG_FILE):
+        print(f"{Colors.WARNING}No existe el archivo de log.{Colors.ENDC}")
+    else:
+        with open(LOG_FILE, "r") as f:
+            lines = f.readlines()[-20:]
+        if not lines:
+            print("El registro está vacío.")
+        else:
+            for line in lines:
+                print(line.strip())
     input("\nPresione Enter para continuar...")
 
 def block_ip():
@@ -419,6 +445,7 @@ def show_menu():
         '6': {'text': 'Activar modo seguro (solo HTTP/HTTPS)', 'function': secure_mode},
         '7': {'text': 'Restablecer firewall (eliminar todas las reglas)', 'function': reset_firewall},
         '8': {'text': 'Guardar configuración', 'function': save_configuration},
+        '9': {'text': 'Ver registro', 'function': view_log},
         '0': {'text': 'Salir', 'function': None}
     }
     
@@ -426,7 +453,8 @@ def show_menu():
         show_banner()
         print(f"{Colors.BLUE}Menú Principal:{Colors.ENDC}")
         
-        for key, option in options.items():
+        for key in sorted(options.keys(), key=int):
+            option = options[key]
             print(f"{key}. {option['text']}")
         
         choice = input(f"\n{Colors.BOLD}Seleccione una opción: {Colors.ENDC}")

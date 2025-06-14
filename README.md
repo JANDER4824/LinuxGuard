@@ -19,6 +19,7 @@ LinuxGuard es una herramienta de gestión de firewall para sistemas Linux que pr
 - 🔥 Modo seguro preconfigurado (HTTP/HTTPS/SSH)
 - 💾 Guardado y restauración de configuraciones
 - 📊 Registro detallado de todas las acciones
+- 👀 Consulta rápida del archivo de registro
 - 🔄 Verificación de requisitos del sistema y módulos del kernel
 - 🛡️ Protección contra diversos ataques de red (SYN flood, XMAS, etc.)
 - 📌 Soporte para reglas IPv4
@@ -57,7 +58,7 @@ Al iniciar el programa, se mostrará un menú interactivo con las siguientes opc
 6. Activar modo seguro (HTTP/HTTPS/SSH)
 7. Restablecer firewall (eliminar todas las reglas)
 8. Guardar configuración
-9. Activar firewall básico
+9. Ver registro
 0. Salir
 
 ## 🔑 Funcionalidades principales
