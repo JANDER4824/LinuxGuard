@@ -106,6 +106,19 @@ Este proyecto está abierto a contribuciones. Si desea contribuir:
 4. Push a la rama (`git push origin feature/amazing-feature`)
 5. Abra un Pull Request
 
+## 🧪 Tests
+
+Para ejecutar las pruebas unitarias puede utilizar [pytest](https://pytest.org) o
+el módulo integrado de `unittest`:
+
+```bash
+# Con pytest
+pytest
+
+# O con unittest
+python -m unittest discover tests
+```
+
 ## 📄 Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT - vea el archivo [LICENSE](LICENSE) para más detalles.
